@@ -16,7 +16,6 @@ public class CustomFilter extends Filter {
     public CustomFilter(ArrayList<Pets> filterList, Adapter adapter) {
         this.adapter = adapter;
         this.filterList = filterList;
-
     }
 
     //FILTERING OCURS
@@ -40,22 +39,17 @@ public class CustomFilter extends Filter {
 
             results.count = filteredPets.size();
             results.values = filteredPets;
-
         } else {
             results.count = filterList.size();
             results.values = filterList;
         }
-
         return results;
     }
 
     @Override
     protected void publishResults(CharSequence constraint, FilterResults results) {
-
         adapter.pets = (ArrayList<Pets>) results.values;
-
         //REFRESH
         adapter.notifyDataSetChanged();
-
     }
 }
