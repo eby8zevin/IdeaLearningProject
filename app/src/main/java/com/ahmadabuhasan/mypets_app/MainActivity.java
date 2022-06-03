@@ -1,10 +1,5 @@
 package com.ahmadabuhasan.mypets_app;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.SearchView;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
@@ -15,12 +10,17 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
 import android.widget.Toast;
 
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SearchView;
+import androidx.recyclerview.widget.LinearLayoutManager;
+
+import com.ahmadabuhasan.mypets_app.databinding.ActivityMainBinding;
 
 import java.util.List;
+import java.util.Objects;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -32,31 +32,24 @@ import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity {
 
-    private RecyclerView recyclerView;
-    private RecyclerView.LayoutManager layoutManager;
+    private ActivityMainBinding binding;
+
     private Adapter adapter;
     private List<Pets> petsList;
-    ApiInterface apiInterface;
+
     Adapter.RecyclerViewClickListener listener;
-    ProgressBar progressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        binding = ActivityMainBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
 
-        apiInterface = ApiClient.getApiClient().create(ApiInterface.class);
-
-        progressBar = findViewById(R.id.progress);
-        recyclerView = findViewById(R.id.recyclerView);
-
-        layoutManager = new LinearLayoutManager(this);
-        recyclerView.setLayoutManager(layoutManager);
+        binding.recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         listener = new Adapter.RecyclerViewClickListener() {
             @Override
             public void onRowClick(View view, final int position) {
-
                 Intent intent = new Intent(MainActivity.this, EditorActivity.class);
                 intent.putExtra("id", petsList.get(position).getId());
                 intent.putExtra("name", petsList.get(position).getName());
@@ -66,12 +59,10 @@ public class MainActivity extends AppCompatActivity {
                 intent.putExtra("picture", petsList.get(position).getPicture());
                 intent.putExtra("birth", petsList.get(position).getBirth());
                 startActivity(intent);
-
             }
 
             @Override
             public void onLoveClick(View view, int position) {
-
                 final int id = petsList.get(position).getId();
                 final Boolean love = petsList.get(position).getLove();
                 final ImageView mLove = view.findViewById(R.id.love);
@@ -87,22 +78,14 @@ public class MainActivity extends AppCompatActivity {
                     updateLove("update_love", id, true);
                     adapter.notifyDataSetChanged();
                 }
-
             }
         };
 
-        FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                startActivity(new Intent(MainActivity.this, EditorActivity.class));
-            }
-        });
+        binding.fab.setOnClickListener(view -> startActivity(new Intent(MainActivity.this, EditorActivity.class)));
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_main, menu);
 
@@ -117,29 +100,24 @@ public class MainActivity extends AppCompatActivity {
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(final String query) {
-
                 adapter.getFilter().filter(query);
                 return false;
             }
 
             @Override
             public boolean onQueryTextChange(String newText) {
-
                 adapter.getFilter().filter(newText);
                 return false;
             }
         });
 
         searchMenuItem.getIcon().setVisible(false, false);
-
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-
         int id = item.getItemId();
-
         if (id == R.id.action_settings) {
             return true;
         }
@@ -147,39 +125,34 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void getPets() {
-
-        Call<List<Pets>> call = apiInterface.getPets();
+        Call<List<Pets>> call = ApiClient.getApiInterface().getPets();
         call.enqueue(new Callback<List<Pets>>() {
             @Override
-            public void onResponse(Call<List<Pets>> call, Response<List<Pets>> response) {
-                progressBar.setVisibility(View.GONE);
+            public void onResponse(@NonNull Call<List<Pets>> call, @NonNull Response<List<Pets>> response) {
+                binding.progress.setVisibility(View.GONE);
                 petsList = response.body();
-                Log.i(MainActivity.class.getSimpleName(), response.body().toString());
+                Log.i(MainActivity.class.getSimpleName(), Objects.requireNonNull(response.body()).toString());
                 adapter = new Adapter(petsList, MainActivity.this, listener);
-                recyclerView.setAdapter(adapter);
+                binding.recyclerView.setAdapter(adapter);
                 adapter.notifyDataSetChanged();
             }
 
             @Override
-            public void onFailure(Call<List<Pets>> call, Throwable t) {
+            public void onFailure(@NonNull Call<List<Pets>> call, @NonNull Throwable t) {
                 Toast.makeText(MainActivity.this, "rp :" +
-                                t.getMessage().toString(),
+                                t.getMessage(),
                         Toast.LENGTH_SHORT).show();
             }
         });
     }
 
     public void updateLove(final String key, final int id, final Boolean love) {
-
-        Call<Pets> call = apiInterface.updateLove(key, id, love);
-
+        Call<Pets> call = ApiClient.getApiInterface().updateLove(key, id, love);
         call.enqueue(new Callback<Pets>() {
             @Override
-            public void onResponse(Call<Pets> call, Response<Pets> response) {
-
+            public void onResponse(@NonNull Call<Pets> call, @NonNull Response<Pets> response) {
                 Log.i(MainActivity.class.getSimpleName(), "Response " + response.toString());
-
-                String value = response.body().getValue();
+                String value = Objects.requireNonNull(response.body()).getValue();
                 String message = response.body().getMassage();
 
                 if (value.equals("1")) {
@@ -187,12 +160,11 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
                 }
-
             }
 
             @Override
-            public void onFailure(Call<Pets> call, Throwable t) {
-                Toast.makeText(MainActivity.this, t.getMessage().toString(), Toast.LENGTH_SHORT).show();
+            public void onFailure(@NonNull Call<Pets> call, @NonNull Throwable t) {
+                Toast.makeText(MainActivity.this, t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }
